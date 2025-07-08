@@ -7,7 +7,8 @@ import streamlit as st
 
 # import langchain
 from langchain.agents import AgentExecutor
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
+from langchain_google_vertexai import ChatVertexAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
@@ -15,7 +16,8 @@ from langchain.agents import create_tool_calling_agent
 from langchain import hub
 from langchain_core.prompts import PromptTemplate
 from langchain_community.vectorstores import SupabaseVectorStore
-from langchain_openai import OpenAIEmbeddings
+# from langchain_openai import OpenAIEmbeddings
+from langchain_google_vertexai import VertexAIEmbeddings
 from langchain_core.tools import tool
 
 # import supabase db
@@ -30,7 +32,11 @@ supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 # initiating embeddings model
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+embeddings = VertexAIEmbeddings(
+    model="text-embedding-004",
+    # project=project_id
+)
 
 # initiating vector store
 vector_store = SupabaseVectorStore(
@@ -41,7 +47,7 @@ vector_store = SupabaseVectorStore(
 )
  
 # initiating llm
-llm = ChatOpenAI(model="gpt-4o",temperature=0)
+llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0)
 
 # pulling prompt from hub
 prompt = hub.pull("hwchase17/openai-functions-agent")

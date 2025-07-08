@@ -3,12 +3,14 @@ import os
 from dotenv import load_dotenv
 
 from langchain.agents import AgentExecutor
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
+from langchain_google_vertexai import ChatVertexAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_tool_calling_agent
 from langchain_core.prompts import PromptTemplate
 from langchain_community.vectorstores import SupabaseVectorStore
-from langchain_openai import OpenAIEmbeddings
+# from langchain_openai import OpenAIEmbeddings
+from langchain_google_vertexai import VertexAIEmbeddings
 from langchain import hub
 
 from supabase.client import Client, create_client
@@ -24,7 +26,12 @@ supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 # initiate embeddings model
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+# embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+# project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+embeddings = VertexAIEmbeddings(
+    model_name="text-embedding-004",
+    # project=project_id
+)
 
 # initiate vector store
 vector_store = SupabaseVectorStore(
@@ -35,7 +42,7 @@ vector_store = SupabaseVectorStore(
 )
 
 # initiate large language model (temperature = 0)
-llm = ChatOpenAI(temperature=0)
+llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0)
 
 # fetch the prompt from the prompt hub
 prompt = hub.pull("hwchase17/openai-functions-agent")
@@ -59,7 +66,7 @@ agent = create_tool_calling_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
 # invoke the agent
-response = agent_executor.invoke({"input": "why is agentic rag better than naive rag?"})
+response = agent_executor.invoke({"input": "What is the mission of DPR. Provide sources for your answer with page numbers."})
 
 # put the result on the screen
 print(response["output"])
