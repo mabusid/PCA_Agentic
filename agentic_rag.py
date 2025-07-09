@@ -1,5 +1,6 @@
 # import basics
 import os
+import json
 from dotenv import load_dotenv
 
 from langchain.agents import AgentExecutor
@@ -16,6 +17,8 @@ from langchain import hub
 from supabase.client import Client, create_client
 from langchain_core.tools import tool
 
+from google.oauth2 import service_account
+
 # load environment variables
 load_dotenv()  
 
@@ -25,12 +28,21 @@ supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
 
 supabase: Client = create_client(supabase_url, supabase_key)
 
+credentials = None
+credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+if credentials_json:
+    # Parse the JSON string
+    service_account_info = json.loads(credentials_json)
+    # Create credentials object
+    credentials = service_account.Credentials.from_service_account_info(service_account_info)
+
 # initiate embeddings model
 # embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 # project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
 embeddings = VertexAIEmbeddings(
     model_name="text-embedding-004",
     # project=project_id
+    credentials=credentials
 )
 
 # initiate vector store
@@ -42,7 +54,11 @@ vector_store = SupabaseVectorStore(
 )
 
 # initiate large language model (temperature = 0)
-llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0)
+llm = ChatVertexAI(
+    model="gemini-2.5-pro", 
+    temperature=0,
+    credentials=credentials
+)
 
 # fetch the prompt from the prompt hub
 prompt = hub.pull("hwchase17/openai-functions-agent")

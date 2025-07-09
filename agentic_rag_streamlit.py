@@ -1,5 +1,6 @@
 # import basics
 import os
+import json
 from dotenv import load_dotenv
 
 # import streamlit
@@ -23,6 +24,8 @@ from langchain_core.tools import tool
 # import supabase db
 from supabase.client import Client, create_client
 
+from google.oauth2 import service_account
+
 # load environment variables
 load_dotenv()  
 
@@ -31,11 +34,20 @@ supabase_url = os.environ.get("SUPABASE_URL")
 supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
+credentials = None
+credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+if credentials_json:
+    # Parse the JSON string
+    service_account_info = json.loads(credentials_json)
+    # Create credentials object
+    credentials = service_account.Credentials.from_service_account_info(service_account_info)
+
 # initiating embeddings model
 project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
 embeddings = VertexAIEmbeddings(
     model="text-embedding-004",
     # project=project_id
+    credentials=credentials
 )
 
 # initiating vector store
@@ -47,7 +59,11 @@ vector_store = SupabaseVectorStore(
 )
  
 # initiating llm
-llm = ChatVertexAI(model="gemini-2.5-pro", temperature=0)
+llm = ChatVertexAI(
+    model="gemini-2.5-pro", 
+    temperature=0,
+    credentials=credentials
+)
 
 # pulling prompt from hub
 prompt = hub.pull("hwchase17/openai-functions-agent")
@@ -92,7 +108,7 @@ for message in st.session_state.messages:
 
 
 # create the bar where we can type messages
-user_question = st.chat_input("How are you?")
+user_question = st.chat_input("Begin typing your question here...")
 
 
 # did the user submit a prompt?
