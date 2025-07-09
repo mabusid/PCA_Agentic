@@ -1,6 +1,7 @@
 # import basics
 import time
 import os
+import json
 from dotenv import load_dotenv
 
 # import langchain
@@ -14,6 +15,8 @@ from langchain_google_vertexai import VertexAIEmbeddings
 # import supabase
 from supabase.client import Client, create_client
 
+from google.oauth2 import service_account
+
 # load environment variables
 load_dotenv()  
 
@@ -22,11 +25,20 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
 supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
+credentials = None
+credentials_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+if credentials_json:
+    # Parse the JSON string
+    service_account_info = json.loads(credentials_json)
+    # Create credentials object
+    credentials = service_account.Credentials.from_service_account_info(service_account_info)
+
 # initiate embeddings model
 # project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
 embeddings = VertexAIEmbeddings(
     model_name="text-embedding-004",
     # project=project_id
+    credentials=credentials
 )
 
 # load pdf docs from folder 'documents'
